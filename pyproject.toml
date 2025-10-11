@@ -1,0 +1,14 @@
+[project]
+name = "seq2func"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "biopython>=1.85",
+    "langchain>=0.3.27",
+    "langchain-openai>=0.3.35",
+    "llama-index>=0.14.4",
+    "pandas>=2.2.3",
+    "python-dotenv>=1.1.1",
+]
