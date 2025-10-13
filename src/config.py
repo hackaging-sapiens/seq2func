@@ -8,6 +8,7 @@ load_dotenv()
 # Nebius API Configuration
 NEBIUS_API_KEY = os.getenv("NEBIUS_API_KEY")
 NEBIUS_BASE_URL = os.getenv("NEBIUS_BASE_URL", "https://api.studio.nebius.ai/v1/")
+NEBIUS_MODEL = os.getenv("NEBIUS_MODEL", "meta-llama/Llama-3.3-70B-Instruct")
 
 # NCBI/PubMed Configuration
 NCBI_EMAIL = os.getenv("NCBI_EMAIL")
