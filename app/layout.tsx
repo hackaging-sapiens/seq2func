@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Next.js on GitHub Pages',
-  description: 'Deploy your static Next.js site to GitHub Pages.',
+  title: 'seq2func - Sequence to Function Longevity Gene Knowledge Base',
+  description: 'A comprehensive knowledge base for protein modifications linked to longevity. Explore sequence-to-function relationships in aging research.',
+  keywords: ['longevity', 'aging', 'proteins', 'genes', 'bioinformatics', 'sequence analysis'],
 };
 
 export default function RootLayout({
@@ -12,7 +14,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50">
+        {children}
+      </body>
     </html>
   );
 }
