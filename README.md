@@ -8,12 +8,21 @@ A knowledge base extraction pipeline for protein modifications linked to longevi
 - Python 3.12
 - [uv](https://github.com/astral-sh/uv) package manager
 
-### 2. Install Dependencies
+
+### 2. Get Source Code
+
+```
+git clone https://github.com/j-silv/seq2func.git
+cd seq2func
+```
+
+### 3. Install Dependencies
+
 ```bash
 uv sync
 ```
 
-### 3. Configure Environment Variables
+### 4. Configure Environment Variables
 Copy the example env file and add your API keys:
 ```bash
 cp .env.example .env
@@ -22,7 +31,7 @@ cp .env.example .env
 Edit `.env` with your credentials:
 - `NEBIUS_API_KEY`: Your Nebius AI API key
 - `NCBI_EMAIL`: Your email (required by NCBI)
-- `NCBI_API_KEY`: (Optional) For higher rate limits
+- `NCBI_API_KEY`: (Optional) For higher rate limits -> must be commented out if unused
 
 ## Testing
 
@@ -35,6 +44,37 @@ This will:
 - Search PubMed for "SIRT1 aging" papers (excluding reviews, free full-text only)
 - Fetch abstracts for the first 5 papers
 - Display metadata (title, abstract, year, journal, MeSH terms)
+
+## Web application
+
+The frontend web app uses Next.js (React) with Tailwind CSS.
+
+Install `fnm` to manage Node.js versions
+
+```
+sudo apt install curl unzip
+curl -fsSL https://fnm.vercel.app/install | bash
+fnm install --lts
+fnm use lts-latest
+```
+
+Install package manager `pnpm`:
+
+```
+npm install -g pnpm@latest-10
+```
+
+Install packages (make sure you are in repo's root directory)
+
+```
+pnpm install
+```
+
+Run server
+
+```
+pnpm dev
+```
 
 ## Current Features
 
