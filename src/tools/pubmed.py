@@ -1,5 +1,5 @@
 """PubMed class for searching and fetching paper metadata."""
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import json
 from langchain.tools import Tool
 from Bio import Entrez, Medline
@@ -34,6 +34,70 @@ class PubMed:
         Entrez.email = self.email
         if self.api_key:
             Entrez.api_key = self.api_key
+
+    def build_search_query(
+        self,
+        gene_name: str,
+        include_reprogramming: bool = False,
+        custom_terms: Optional[List[str]] = None
+    ) -> str:
+        """
+        Build an expanded PubMed search query for a gene with aging-related terms.
+
+        Args:
+            gene_name: Gene name or symbol (e.g., "IGF1R", "NRF2", "SOX2")
+            include_reprogramming: If True, adds reprogramming-related terms (useful for SOX2, OCT4, etc.)
+            custom_terms: Optional list of custom terms to add to the query
+
+        Returns:
+            Formatted PubMed query string
+
+        Examples:
+            >>> pubmed = PubMed()
+            >>> pubmed.build_search_query("IGF1R")
+            'IGF1R[TIAB] AND (aging[TIAB] OR longevity[TIAB] OR lifespan[TIAB]...) NOT (Review[PT]) AND hasabstract'
+
+            >>> pubmed.build_search_query("SOX2", include_reprogramming=True)
+            'SOX2[TIAB] AND (aging[TIAB] OR ... OR reprogramming[TIAB]...) NOT (Review[PT]) AND hasabstract'
+        """
+        # Core aging-related terms
+        aging_terms = [
+            "aging",
+            "longevity",
+            "lifespan",
+            "healthspan",
+            "life span",
+            "centenarian",
+            "survival",
+            "senescence",
+            "age-related"
+        ]
+
+        # Add reprogramming terms if requested (for genes like SOX2, OCT4, KLF4, MYC)
+        if include_reprogramming:
+            aging_terms.extend([
+                "reprogramming",
+                "cellular reprogramming",
+                "Yamanaka factors"
+            ])
+
+        # Add custom terms if provided
+        if custom_terms:
+            aging_terms.extend(custom_terms)
+
+        # Build the query using [TIAB] field tags to search in Title or Abstract
+        # This is more reliable than relying on MeSH terms or keywords
+        aging_terms_tiab = [f"{term}[TIAB]" for term in aging_terms]
+        terms_str = " OR ".join(aging_terms_tiab)
+
+        # Apply [TIAB] to gene name as well
+        query = f"{gene_name}[TIAB] AND ({terms_str})"
+
+        # Add filters
+        query += " NOT (Review[PT])"  # Exclude review articles
+        query += " AND hasabstract"   # Only papers with abstracts (needed for screening)
+
+        return query
 
     def search(self, query: str, max_results: int = 100, exclude_reviews: bool = True,
                free_full_text_only: bool = True) -> List[str]:
