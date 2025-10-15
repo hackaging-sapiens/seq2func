@@ -2,6 +2,8 @@
 
 A knowledge base extraction pipeline for protein modifications linked to longevity.
 
+Website URL: https://hackaging-sapiens.github.io/seq2func/
+
 ## Setup
 
 ### 1. Prerequisites
