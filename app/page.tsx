@@ -1,10 +1,9 @@
-'use client';
-
 import Link from 'next/link';
-import { proteins } from './data/proteins';
+import { fetchProteins } from './lib/api';
 import { ThemeToggle } from './components/ThemeToggle';
 
-export default function Home() {
+export default async function Home() {
+  const proteins = await fetchProteins();
   return (
     <main className="min-h-screen">
       {/* Header */}

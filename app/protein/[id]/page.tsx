@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { proteins } from '@/app/data/proteins';
+import { fetchProteins, fetchProteinById } from '@/app/lib/api';
 import { ThemeToggle } from '@/app/components/ThemeToggle';
 
 interface ProteinPageProps {
@@ -8,6 +8,7 @@ interface ProteinPageProps {
 }
 
 export async function generateStaticParams() {
+  const proteins = await fetchProteins();
   return proteins.map((protein) => ({
     id: protein.id,
   }));
@@ -15,7 +16,7 @@ export async function generateStaticParams() {
 
 export default async function ProteinPage({ params }: ProteinPageProps) {
   const { id } = await params;
-  const protein = proteins.find((p) => p.id === id);
+  const protein = await fetchProteinById(id);
 
   if (!protein) {
     notFound();
