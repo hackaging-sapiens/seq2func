@@ -1,14 +1,13 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
 /**
  * Component that handles scroll position restoration when navigating back
  */
 export function ScrollRestoration() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const isRestoringRef = useRef(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -65,7 +64,7 @@ export function ScrollRestoration() {
         clearTimeout(scrollTimeoutRef.current);
       }
     };
-  }, [pathname, searchParams]);
+  }, [pathname]);
 
   return null;
 }
