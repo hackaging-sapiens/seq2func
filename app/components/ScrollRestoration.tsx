@@ -10,7 +10,7 @@ export function ScrollRestoration() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isRestoringRef = useRef(false);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Only restore on home page
@@ -46,7 +46,7 @@ export function ScrollRestoration() {
     const handleScroll = () => {
       if (pathname === '/' && !isRestoringRef.current) {
         // Debounce the save operation
-        if (scrollTimeoutRef.current) {
+        if (scrollTimeoutRef.current !== null) {
           clearTimeout(scrollTimeoutRef.current);
         }
 
@@ -61,7 +61,7 @@ export function ScrollRestoration() {
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      if (scrollTimeoutRef.current) {
+      if (scrollTimeoutRef.current !== null) {
         clearTimeout(scrollTimeoutRef.current);
       }
     };
