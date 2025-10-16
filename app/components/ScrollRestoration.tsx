@@ -20,24 +20,23 @@ export function ScrollRestoration() {
         isRestoringRef.current = true;
         const position = parseInt(savedPosition, 10);
 
-        // Multiple delayed attempts to ensure DOM and images are loaded
-        const restore = () => {
+        // Immediately scroll before React paints
+        window.scrollTo({ top: position, behavior: 'instant' });
+
+        // Use requestAnimationFrame to ensure it happens before paint
+        requestAnimationFrame(() => {
           window.scrollTo({ top: position, behavior: 'instant' });
-        };
 
-        // Immediate restore
-        restore();
-
-        // Additional attempts with increasing delays
-        const delays = [10, 50, 100, 200, 300, 500];
-        delays.forEach(delay => {
-          setTimeout(restore, delay);
+          // Additional frame for safety
+          requestAnimationFrame(() => {
+            window.scrollTo({ top: position, behavior: 'instant' });
+          });
         });
 
-        // Reset flag
+        // Reset flag after a short delay
         setTimeout(() => {
           isRestoringRef.current = false;
-        }, 600);
+        }, 100);
       }
     }
 

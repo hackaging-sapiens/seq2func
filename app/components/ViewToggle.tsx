@@ -1,26 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export type ViewMode = 'grid' | 'table';
 
 interface ViewToggleProps {
+  initialView: ViewMode;
   onViewChange: (view: ViewMode) => void;
 }
 
-export function ViewToggle({ onViewChange }: ViewToggleProps) {
-  const [view, setView] = useState<ViewMode>('grid');
-  const [mounted, setMounted] = useState(false);
-
-  // Load view preference from localStorage on mount
-  useEffect(() => {
-    setMounted(true);
-    const savedView = localStorage.getItem('protein-view') as ViewMode;
-    if (savedView === 'grid' || savedView === 'table') {
-      setView(savedView);
-      onViewChange(savedView);
-    }
-  }, [onViewChange]);
+export function ViewToggle({ initialView, onViewChange }: ViewToggleProps) {
+  const [view, setView] = useState<ViewMode>(initialView);
 
   const toggleView = () => {
     const newView: ViewMode = view === 'grid' ? 'table' : 'grid';
@@ -28,13 +18,6 @@ export function ViewToggle({ onViewChange }: ViewToggleProps) {
     localStorage.setItem('protein-view', newView);
     onViewChange(newView);
   };
-
-  // Show placeholder during SSR and initial hydration to prevent mismatch
-  if (!mounted) {
-    return (
-      <div className="p-2 w-9 h-9 rounded-lg bg-white/10 dark:bg-gray-800/50" aria-hidden="true" />
-    );
-  }
 
   return (
     <button

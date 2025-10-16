@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Protein } from '@/app/lib/api';
 import { ViewMode, ViewToggle } from './ViewToggle';
 import { ProteinGrid } from './ProteinGrid';
@@ -17,12 +17,6 @@ export function ProteinList({ proteins }: ProteinListProps) {
     const saved = localStorage.getItem('protein-view') as ViewMode;
     return (saved === 'grid' || saved === 'table') ? saved : 'grid';
   });
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    // Set mounted immediately without delay
-    setMounted(true);
-  }, []);
 
   const handleViewChange = useCallback((view: ViewMode) => {
     setViewMode(view);
@@ -38,11 +32,7 @@ export function ProteinList({ proteins }: ProteinListProps) {
           <span className="text-sm text-gray-600 dark:text-gray-400">
             {proteins.length} proteins
           </span>
-          {mounted ? (
-            <ViewToggle onViewChange={handleViewChange} />
-          ) : (
-            <div className="p-2 w-9 h-9 rounded-lg bg-gray-200 dark:bg-gray-700" aria-hidden="true" />
-          )}
+          <ViewToggle initialView={viewMode} onViewChange={handleViewChange} />
         </div>
       </div>
 
