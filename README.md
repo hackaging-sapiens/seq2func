@@ -49,9 +49,9 @@ uv run python src/workflows/gene_search.py data/gene_mappings.csv
 
 This will:
 1. Read genes from `data/gene_mappings.csv` (gene_symbol, gene_id, include_reprogramming)
-2. Search top 200 PubMed papers for each gene (excludes reviews, requires abstracts)
-3. Screen papers using LLM for SEQUENCE→FUNCTION→AGING causal links
-4. Save top 20 relevant papers per gene to `data/literature_search/all_genes_results.csv`
+2. Prescreen with PubMed search to get the top 200 papers for each gene with the optimized query
+3. Deep screen top 200 using LLM for SEQUENCE→FUNCTION→AGING causal links
+4. Save top 20 relevant papers per gene (ranked by LLM rating) to `data/all_genes_results.csv`
 5. Skip genes that already have results in the database
 
 **Force rerun all genes (ignore existing results):**
