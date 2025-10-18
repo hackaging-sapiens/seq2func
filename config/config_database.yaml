@@ -1,0 +1,24 @@
+# Database Configuration
+database:
+  # Schema name (leave empty or null for default 'public')
+  schema: seq2func
+  
+  # Table names (customize if needed)
+  tables:
+    genes: genes
+    proteins: proteins
+    ptms: ptms
+    dna_sequences: dna_sequences
+    protein_sequences: protein_sequences
+    longevity_association: longevity_association
+    gene_master: gene_master
+    protein_master: protein_master
+    gene_transcript_protein: gene_transcript_protein
+  
+  # Connection settings (these can override .env values)
+  connection:
+    # host: localhost
+    # port: 5432
+    # database: your_database_name
+    # user: your_username
+    # password: your_password
