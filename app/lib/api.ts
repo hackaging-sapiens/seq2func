@@ -1,3 +1,5 @@
+import { API_BASE_URL } from './config';
+
 export interface Protein {
   id: string;
   name: string;
@@ -108,7 +110,7 @@ export async function fetchProteinById(id: string): Promise<Protein | undefined>
  * @deprecated Use startGeneSearch() for async task-based search with progress tracking
  */
 export async function searchGene(params: GeneSearchParams): Promise<SearchResponse> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const apiUrl = API_BASE_URL;
 
   // Build query string from parameters
   const queryParams = new URLSearchParams({
@@ -153,7 +155,7 @@ export async function searchGene(params: GeneSearchParams): Promise<SearchRespon
  * @throws Error if the request fails
  */
 export async function startGeneSearch(params: GeneSearchParams): Promise<TaskStartResponse> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const apiUrl = API_BASE_URL;
   const url = `${apiUrl}/agent/start`;
 
   try {
@@ -192,7 +194,7 @@ export async function startGeneSearch(params: GeneSearchParams): Promise<TaskSta
  * @throws Error if the request fails
  */
 export async function getTaskStatus(taskId: string): Promise<TaskStatusResponse> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const apiUrl = API_BASE_URL;
   const url = `${apiUrl}/agent/status/${taskId}`;
 
   try {
@@ -224,7 +226,7 @@ export async function getTaskStatus(taskId: string): Promise<TaskStatusResponse>
  * @throws Error if the request fails
  */
 export async function cancelTask(taskId: string): Promise<void> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const apiUrl = API_BASE_URL;
   const url = `${apiUrl}/agent/cancel/${taskId}`;
 
   try {

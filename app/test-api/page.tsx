@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { API_BASE_URL } from '../lib/config';
 
 export default function TestApiPage() {
   const [results, setResults] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState<Record<string, boolean>>({});
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  const apiUrl = API_BASE_URL;
 
   const testEndpoint = async (endpoint: string, label: string) => {
     setLoading(prev => ({ ...prev, [label]: true }));
