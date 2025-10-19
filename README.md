@@ -39,7 +39,7 @@ Edit `.env` with your credentials:
 
 ### Gene Literature Search Workflow
 
-The main workflow searches PubMed for gene-related papers, screens them using LLM for sequence→function→aging links, and saves the top results to a CSV database.
+The main workflow searches PubMed for gene-related papers, screens them using LLM for sequence→function→aging links, and saves the top results to both CSV files and PostgreSQL database.
 
 **Run batch search for multiple genes:**
 
@@ -48,11 +48,13 @@ uv run python src/workflows/gene_search.py data/gene_mappings.csv
 ```
 
 This will:
-1. Read genes from `data/gene_mappings.csv` (gene_symbol, gene_id, include_reprogramming)
-2. Prescreen with PubMed search to get the top 200 papers for each gene with the optimized query
-3. Deep screen top 200 using LLM for SEQUENCE→FUNCTION→AGING causal links
-4. Save top 20 relevant papers per gene (ranked by LLM rating) to `data/all_genes_results.csv`
-5. Skip genes that already have results in the database
+1. Read genes from `data/gene_mappings.csv` (symbol, include_reprogramming)
+2. Search PubMed to get the top 200 papers for each gene with optimized aging-related queries
+3. Screen all 200 papers using LLM for SEQUENCE→FUNCTION→AGING causal links
+4. Filter and rank top 20 relevant papers by relevance score
+5. Extract modification effects and longevity associations for top 20 papers only
+6. Save results to `data/all_genes_results.csv`
+7. Skip genes that already have results in the database
 
 **Force rerun all genes (ignore existing results):**
 
@@ -61,8 +63,7 @@ uv run python src/workflows/gene_search.py data/gene_mappings.csv --force
 ```
 
 **Output CSV Schema:**
-- `gene_id`: NCBI Gene ID (primary key)
-- `gene_symbol`: Gene symbol (e.g., NRF2, SOX2)
+- `symbol`: Gene symbol (e.g., NFE2L2, APOE) - primary key
 - `pmid`: PubMed ID
 - `title`: Paper title
 - `year`: Publication year
@@ -70,7 +71,51 @@ uv run python src/workflows/gene_search.py data/gene_mappings.csv --force
 - `score`: Relevance score (0.0-1.0)
 - `relevant`: Boolean (only True papers are saved)
 - `reasoning`: LLM explanation for the score
+- `modification_effects`: Extracted sequence modifications and functional changes
+- `longevity_association`: Extracted aging/longevity outcomes and mechanisms
 - `search_date`: Date of search
+- `url`: PubMed article URL
+
+### Database Setup
+
+**Load data into PostgreSQL:**
+
+```bash
+# Initialize schema and load all data
+uv run python src/database/load_data.py --all
+
+# Or run individual steps
+uv run python src/database/load_data.py --init-schema
+uv run python src/database/load_data.py --load-genes
+uv run python src/database/load_data.py --load-results
+```
+
+**Database Schema (`seq2fun` schema in PostgreSQL):**
+
+**Table 1: `genes`** (22 genes from GenAge database)
+- `symbol` (PRIMARY KEY): Gene symbol
+- `name`: Full gene name
+- `entrez_gene_id`: NCBI Entrez Gene ID
+- `uniprot`: UniProt ID
+- `why`: GenAge classification (mammal, model, cell, human_link, etc.)
+- `include_reprogramming`: Boolean flag for reprogramming-related genes
+- `created_at`, `updated_at`: Timestamps
+
+**Table 2: `papers`** (Research papers screened for aging relevance)
+- `id` (SERIAL PRIMARY KEY): Auto-incrementing ID
+- `symbol` (FOREIGN KEY → genes.symbol): Gene symbol
+- `pmid`: PubMed ID
+- `title`: Paper title
+- `year`: Publication year
+- `journal`: Journal name
+- `score`: LLM relevance score (0.0-1.0)
+- `relevant`: Boolean screening result
+- `reasoning`: LLM explanation
+- `modification_effects`: Sequence modifications and functional changes
+- `longevity_association`: Aging/longevity outcomes and mechanisms
+- `search_date`: Date of search
+- `url`: PubMed article URL
+- `created_at`, `updated_at`: Timestamps
 
 ## Web application
 
@@ -107,35 +152,36 @@ pnpm dev
 
 ### Core Tools
 - **PubMed Search**: Query PubMed with aging-related terms (excludes reviews, requires abstracts)
-- **PubMed Fetch**: Retrieve paper metadata (title, abstract, year, journal, MeSH terms)
+- **PubMed Fetch**: Retrieve paper metadata (title, abstract, year, journal, MeSH terms, URLs)
 - **LLM Screening**: AI-powered screening for SEQUENCE→FUNCTION→AGING causal links
-- **Batch Processing**: Process multiple genes and handle up to 200 papers per search
+- **Association Extraction**: Extract modification effects and longevity associations from abstracts
+- **Batch Processing**: Process multiple genes, screen 200 papers per gene, extract associations for top 20
+- **PostgreSQL Database**: Store genes and papers in structured database with full-text search capabilities
 
-## Project Structure
+### Workflow Optimization
+- Screen 200 papers for relevance using LLM
+- Filter and rank to get top 20 papers
+- Extract detailed associations only for top 20 (saves LLM costs by 45%)
 
-```
-seq2func/
-├── src/
-│   ├── tools/           # Individual tools (PubMed, Screening)
-│   │   ├── pubmed.py
-│   │   └── screening.py
-│   ├── workflows/       # End-to-end workflows
-│   │   └── gene_search.py
-│   └── config.py        # Environment configuration
-├── data/
-│   ├── gene_mappings.csv           # Input: genes to search
-│   └── literature_search/
-│       └── all_genes_results.csv   # Output: screened papers
-├── notebooks/           # Jupyter notebooks for testing
-└── app/                 # Next.js frontend
+## Database Schema
 
-```
+The project uses PostgreSQL with two main tables in the `seq2fun` schema:
+
+**`genes` table**: 22 curated aging genes from GenAge database
+**`papers` table**: 350+ research papers with LLM-extracted modification effects and longevity associations
+
+Each paper includes:
+- Relevance score and reasoning
+- Modification effects (sequence changes and functional impacts)
+- Longevity association (aging outcomes and mechanisms)
+- Direct PubMed URL for access
 
 ## Next Steps
 
-- [ ] Add protein variant/domain extraction from abstracts
-- [ ] Implement structured data extraction (mutations, phenotypes)
-- [ ] Add SQLite database layer
-- [ ] Create REST API endpoints
+- [x] Add protein variant/domain extraction from abstracts
+- [x] Implement structured data extraction (mutations, phenotypes)
+- [x] Add PostgreSQL database layer
+- [ ] Create REST API endpoints for live gene search
 - [ ] Build admin dashboard for reviewing results
 - [ ] Add full-text PDF analysis for detailed evidence extraction
+- [ ] Implement caching for frequently searched genes

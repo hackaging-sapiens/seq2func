@@ -30,12 +30,11 @@ class GeneLiteratureSearch:
     Example:
         workflow = GeneLiteratureSearch()
         results = workflow.search_gene(
-            gene_symbol="NRF2",
-            gene_id=4780,
+            gene_symbol="NFE2L2",
             max_results=200,
             top_n=20
         )
-        workflow.save_results(results, "data/nrf2_papers.csv")
+        workflow.save_results(results, "data/nfe2l2_papers.csv")
     """
 
     def __init__(self):
@@ -46,7 +45,6 @@ class GeneLiteratureSearch:
     def search_gene(
         self,
         gene_symbol: str,
-        gene_id: Optional[int] = None,
         max_results: int = 200,
         top_n: int = 20,
         include_reprogramming: bool = False,
@@ -58,8 +56,7 @@ class GeneLiteratureSearch:
         Search and screen papers for a gene.
 
         Args:
-            gene_symbol: Gene symbol (e.g., "NRF2", "SOX2")
-            gene_id: NCBI Gene ID (Entrez ID) for unique identification (optional)
+            gene_symbol: Gene symbol (e.g., "NRF2", "SOX2", "APOE")
             max_results: Maximum number of papers to retrieve from PubMed
             top_n: Number of top-ranked papers to return
             include_reprogramming: Whether to include reprogramming terms in search
@@ -156,18 +153,20 @@ class GeneLiteratureSearch:
                 keywords=paper.get("mesh_terms", [])
             )
 
-            # Combine paper metadata with screening results
+            # Combine paper metadata with screening results (no associations yet)
             result = {
-                "gene_id": gene_id,
-                "gene_symbol": gene_symbol,
+                "symbol": gene_symbol,
                 "pmid": paper.get("pmid", ""),
                 "title": paper.get("title", ""),
                 "year": paper.get("year", ""),
                 "journal": paper.get("journal", ""),
+                "abstract": paper.get("abstract", ""),  # Keep for step 5
+                "mesh_terms": paper.get("mesh_terms", []),  # Keep for step 5
                 "score": screening_result.get("score", 0.0),
                 "relevant": screening_result.get("relevant", False),
                 "reasoning": screening_result.get("reasoning", ""),
-                "search_date": datetime.now().strftime("%Y-%m-%d")
+                "search_date": datetime.now().strftime("%Y-%m-%d"),
+                "url": paper.get("url", "")
             }
             results.append(result)
 
@@ -186,7 +185,7 @@ class GeneLiteratureSearch:
         print(f"\n{'='*80}")
         print(f"SCREENING COMPLETE")
         print(f"{'='*80}")
-        print(f"Total papers screened: {len(results)}")
+        print(f"Total papers screened for relevance: {len(results)}")
         print(f"Relevant papers (relevant=True): {len(relevant_results)}")
         print(f"Top {len(top_results)} relevant papers selected (requested: {top_n})")
         if was_cancelled:
@@ -219,8 +218,7 @@ class GeneLiteratureSearch:
 
         # Define CSV columns
         fieldnames = [
-            "gene_id",
-            "gene_symbol",
+            "symbol",
             "pmid",
             "title",
             "year",
@@ -228,7 +226,10 @@ class GeneLiteratureSearch:
             "score",
             "relevant",
             "reasoning",
-            "search_date"
+            "modification_effects",
+            "longevity_association",
+            "search_date",
+            "url"
         ]
 
         # Write to CSV
@@ -256,10 +257,10 @@ def batch_search_genes(
     Batch search multiple genes and save all results to a single CSV.
 
     Args:
-        genes: List of gene dicts with keys: gene_symbol, gene_id, include_reprogramming
+        genes: List of gene dicts with keys: symbol, include_reprogramming
                Example: [
-                   {"gene_symbol": "NRF2", "gene_id": 4780, "include_reprogramming": False},
-                   {"gene_symbol": "SOX2", "gene_id": 6657, "include_reprogramming": True}
+                   {"symbol": "NFE2L2", "include_reprogramming": False},
+                   {"symbol": "MYC", "include_reprogramming": True}
                ]
         output_file: Path to output CSV file
         max_results: Maximum papers to retrieve per gene
@@ -278,9 +279,10 @@ def batch_search_genes(
         with open(output_file, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                # Track by gene_id if available, otherwise by gene_symbol
-                gene_key = row.get("gene_id")
-                existing_genes.add(gene_key)
+                # Track by symbol
+                symbol = row.get("symbol")
+                if symbol:
+                    existing_genes.add(symbol)
 
     print(f"\n{'='*80}")
     print(f"BATCH GENE LITERATURE SEARCH")
@@ -295,21 +297,20 @@ def batch_search_genes(
     skipped_count = 0
 
     for i, gene in enumerate(genes, 1):
-        gene_key = str(gene.get("gene_id"))
+        symbol = gene.get("symbol")
 
         # Skip if gene already exists in CSV
-        if skip_existing and gene_key in existing_genes:
-            print(f"⊘ Skipping {gene['gene_symbol']} (gene_id: {gene.get('gene_id')}) - already in database")
+        if skip_existing and symbol in existing_genes:
+            print(f"⊘ Skipping {symbol} - already in database")
             skipped_count += 1
             continue
 
         print(f"\n{'='*80}")
-        print(f"Processing gene {i}/{len(genes)}: {gene['gene_symbol']}")
+        print(f"Processing gene {i}/{len(genes)}: {symbol}")
         print(f"{'='*80}\n")
 
         results = workflow.search_gene(
-            gene_symbol=gene["gene_symbol"],
-            gene_id=gene.get("gene_id"),
+            gene_symbol=symbol,
             max_results=max_results,
             top_n=top_n,
             include_reprogramming=gene.get("include_reprogramming", False)
@@ -341,7 +342,7 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python gene_search.py <gene_mapping_file> [--force]")
         print("\nArguments:")
-        print("  gene_mapping_file    CSV file with gene mappings (gene_symbol, gene_id, include_reprogramming)")
+        print("  gene_mapping_file    CSV file with gene mappings (symbol, include_reprogramming)")
         print("  --force              Optional: Rerun genes that already exist in the database")
         print("\nExamples:")
         print("  python gene_search.py data/gene_mappings.csv")
@@ -356,13 +357,12 @@ if __name__ == "__main__":
         reader = csv.DictReader(f)
         for row in reader:
             genes.append({
-                "gene_symbol": row["gene_symbol"],
-                "gene_id": int(row["gene_id"]) if row.get("gene_id") else None,
+                "symbol": row["symbol"],
                 "include_reprogramming": row.get("include_reprogramming", "false").lower() == "true"
             })
 
     print(f"Loaded {len(genes)} genes from {mapping_file}")
-    print(f"Genes: {', '.join(g['gene_symbol'] for g in genes)}\n")
+    print(f"Genes: {', '.join(g['symbol'] for g in genes)}\n")
 
     # Check for --force flag to rerun all genes
     skip_existing = "--force" not in sys.argv
