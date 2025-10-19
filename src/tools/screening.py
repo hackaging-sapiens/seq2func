@@ -6,6 +6,87 @@ from langchain_openai import ChatOpenAI
 from src.config import NEBIUS_API_KEY, NEBIUS_BASE_URL, NEBIUS_MODEL
 
 
+ASSOCIATION_PROMPT = """
+You are extracting structured information about protein modifications and their longevity effects from biomedical papers.
+
+Your task is to extract TWO specific pieces of information:
+
+1. **MODIFICATION EFFECTS**: Identify sequence-level modifications and their functional impacts
+   - Sequence intervals (e.g., "residues 45-67", "C-terminal domain", "position 151")
+   - Specific mutations (e.g., "C151S", "deletion 200-250", "K48R substitution")
+   - Functional changes resulting from modifications (e.g., "increased transcriptional activity", "enhanced DNA binding", "reduced degradation")
+
+2. **LONGEVITY ASSOCIATION**: Identify aging/longevity outcomes and mechanisms
+   - Phenotypic outcome (e.g., "extended lifespan", "delayed senescence", "enhanced stress resistance")
+   - Magnitude if specified (e.g., "20% increase", "1.5-fold extension", "significant")
+   - Model organism (e.g., "C. elegans", "mice", "human cells", "yeast")
+   - Mechanism connecting to aging (e.g., "reduced oxidative stress", "enhanced autophagy", "improved proteostasis")
+
+### OUTPUT FORMAT
+Respond ONLY with valid JSON in this exact format:
+{{
+  "modification_effects": "Concise summary of sequence modifications and functional changes, or 'Not specified' if unclear",
+  "longevity_association": "Concise summary of aging/longevity outcomes and mechanisms, or 'Not specified' if unclear"
+}}
+
+### EXAMPLES
+
+**Example 1 - Clear modifications and longevity:**
+Title: "KEAP1 mutation constitutively activates NRF2 and extends lifespan in birds"
+Abstract: "Modern birds carry a KEAP1 mutation that prevents NRF2 degradation, leading to constitutive antioxidant activation. This results in reduced oxidative damage and 30% extended lifespan compared to reptiles..."
+
+Output:
+{{
+  "modification_effects": "KEAP1 mutation prevents NRF2 degradation; constitutive antioxidant pathway activation",
+  "longevity_association": "30% lifespan extension in birds; mechanism: reduced oxidative stress"
+}}
+
+**Example 2 - Specific residue mutations:**
+Title: "SOX2 C-terminal modifications enhance reprogramming efficiency"
+Abstract: "Mutations in SOX2 residues 200-220 increase DNA binding affinity 3-fold. Modified SOX2 improves cellular reprogramming efficiency by 50% in aged fibroblasts..."
+
+Output:
+{{
+  "modification_effects": "Residues 200-220 mutations; 3-fold increased DNA binding affinity",
+  "longevity_association": "50% improved reprogramming efficiency in aged cells; rejuvenation potential"
+}}
+
+**Example 3 - Limited information:**
+Title: "NRF2 pathway activation promotes stress resistance"
+Abstract: "Activation of NRF2 pathway enhances antioxidant response and improves stress resistance in aging cells..."
+
+Output:
+{{
+  "modification_effects": "Not specified",
+  "longevity_association": "Enhanced stress resistance in aging cells; antioxidant pathway activation"
+}}
+
+**Example 4 - APOE variants:**
+Title: "APOE2 variant protective effect on longevity"
+Abstract: "The APOE2 allele, characterized by Cys112/Cys158, shows protective effects with 20% increased survival in centenarians compared to APOE4 carriers..."
+
+Output:
+{{
+  "modification_effects": "APOE2 variant (Cys112/Cys158); altered lipid binding properties",
+  "longevity_association": "20% increased survival in human centenarians; protective against neurodegeneration"
+}}
+
+---
+
+### INSTRUCTIONS
+- Be **concise** but **specific** - include numerical values and organism names when available
+- If information is not mentioned in the paper, write "Not specified"
+- Focus on **concrete findings**, not speculation
+- Extract only from the provided title, abstract, and keywords
+
+---
+
+PAPER TO ANALYZE:
+Title: {title}
+Abstract: {abstract}
+MeSH Terms: {keywords}
+""".strip()
+
 SCREENING_PROMPT = """
 You are analyzing biomedical papers to identify SEQUENCE → FUNCTION → AGING causal links.
 
@@ -215,4 +296,87 @@ class Screening:
                 "relevant": False,
                 "score": 0.0,
                 "reasoning": f"Screening error: {str(e)}"
+            }
+
+    def screen_association(
+        self,
+        title: str,
+        abstract: str,
+        keywords: List[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Extract modification effects and longevity associations from a paper.
+
+        Analyzes papers to extract structured information about:
+        1. Modification effects (sequence changes and functional impacts)
+        2. Longevity association (aging/longevity outcomes and mechanisms)
+
+        Args:
+            title: Paper title
+            abstract: Full abstract text (required)
+            keywords: List of MeSH terms or keywords (optional)
+
+        Returns:
+            Dict with keys: modification_effects (str), longevity_association (str)
+        """
+        if not title:
+            return {
+                "modification_effects": "Not specified",
+                "longevity_association": "Not specified"
+            }
+
+        if not abstract:
+            return {
+                "modification_effects": "Not specified",
+                "longevity_association": "Not specified"
+            }
+
+        # Format keywords as a readable string
+        keywords_str = ", ".join(keywords) if keywords else "None"
+
+        try:
+            prompt = ASSOCIATION_PROMPT.format(
+                title=title,
+                abstract=abstract,
+                keywords=keywords_str
+            )
+
+            response = self.llm.invoke(prompt)
+
+            # Parse JSON from LLM response
+            # Strip markdown code blocks if present (```json ... ```)
+            content = response.content.strip()
+
+            if content.startswith("```"):
+                # Remove markdown code block markers
+                lines = content.split("\n")
+                # Remove first line (```json or ```)
+                if lines[0].startswith("```"):
+                    lines = lines[1:]
+                # Remove last line (```)
+                if lines and lines[-1].strip() == "```":
+                    lines = lines[:-1]
+                content = "\n".join(lines).strip()
+
+            result = json.loads(content)
+
+            # Ensure all required fields exist
+            if "modification_effects" not in result:
+                result["modification_effects"] = "Not specified"
+            if "longevity_association" not in result:
+                result["longevity_association"] = "Not specified"
+
+            return result
+
+        except json.JSONDecodeError as e:
+            # Log the raw response for debugging
+            raw_response = response.content if 'response' in locals() else "No response"
+            return {
+                "modification_effects": f"Parsing error: {str(e)}",
+                "longevity_association": "Not specified"
+            }
+        except Exception as e:
+            return {
+                "modification_effects": f"Extraction error: {str(e)}",
+                "longevity_association": "Not specified"
             }

@@ -152,6 +152,7 @@ class PubMed:
                 - year: Publication year
                 - journal: Journal name
                 - mesh_terms: MeSH terms (keywords)
+                - url: PubMed article URL
         """
         # Convert to list if needed and filter empty values
         if isinstance(pmids, str):
@@ -180,13 +181,15 @@ class PubMed:
                 records = Medline.parse(handle)
 
                 for record in records:
+                    pmid = record.get("PMID", "")
                     paper = {
-                        "pmid": record.get("PMID", ""),
+                        "pmid": pmid,
                         "title": record.get("TI", ""),  # Title
                         "abstract": record.get("AB", ""),  # Abstract
                         "year": record.get("DP", "").split()[0] if record.get("DP") else None,  # Date Published
                         "journal": record.get("TA", ""),  # Title Abbreviation (journal)
-                        "mesh_terms": record.get("MH", [])  # MeSH Headings (keywords)
+                        "mesh_terms": record.get("MH", []),  # MeSH Headings (keywords)
+                        "url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/" if pmid else ""  # PubMed URL
                     }
                     papers.append(paper)
 

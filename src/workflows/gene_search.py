@@ -27,12 +27,11 @@ class GeneLiteratureSearch:
     Example:
         workflow = GeneLiteratureSearch()
         results = workflow.search_gene(
-            gene_symbol="NRF2",
-            gene_id=4780,
+            gene_symbol="NFE2L2",
             max_results=200,
             top_n=20
         )
-        workflow.save_results(results, "data/nrf2_papers.csv")
+        workflow.save_results(results, "data/nfe2l2_papers.csv")
     """
 
     def __init__(self):
@@ -43,7 +42,6 @@ class GeneLiteratureSearch:
     def search_gene(
         self,
         gene_symbol: str,
-        gene_id: Optional[int] = None,
         max_results: int = 200,
         top_n: int = 20,
         include_reprogramming: bool = False,
@@ -53,8 +51,7 @@ class GeneLiteratureSearch:
         Search and screen papers for a gene.
 
         Args:
-            gene_symbol: Gene symbol (e.g., "NRF2", "SOX2")
-            gene_id: NCBI Gene ID (Entrez ID) for unique identification (optional)
+            gene_symbol: Gene symbol (e.g., "NRF2", "SOX2", "APOE")
             max_results: Maximum number of papers to retrieve from PubMed
             top_n: Number of top-ranked papers to return
             include_reprogramming: Whether to include reprogramming terms in search
@@ -65,8 +62,6 @@ class GeneLiteratureSearch:
         """
         print(f"{'='*80}")
         print(f"GENE LITERATURE SEARCH: {gene_symbol}")
-        if gene_id:
-            print(f"Gene ID: {gene_id}")
         print(f"{'='*80}\n")
 
         # Step 1: Build search query
@@ -92,43 +87,66 @@ class GeneLiteratureSearch:
         papers = self.pubmed.fetch(pmids)
         print(f"✓ Fetched {len(papers)} papers\n")
 
-        # Step 4: Screen papers with LLM
+        # Step 4: Screen papers for relevance (all 200 papers)
         print("Step 4: Screening papers for sequence→function→aging links...")
         results = []
 
-        for paper in tqdm(papers, desc="Screening"):
+        for paper in tqdm(papers, desc="Screening for relevance"):
+            # Screen for relevance only
             screening_result = self.screening.screen_paper(
                 title=paper.get("title", ""),
                 abstract=paper.get("abstract", ""),
                 keywords=paper.get("mesh_terms", [])
             )
 
-            # Combine paper metadata with screening results
+            # Combine paper metadata with screening results (no associations yet)
             result = {
-                "gene_id": gene_id,
-                "gene_symbol": gene_symbol,
+                "symbol": gene_symbol,
                 "pmid": paper.get("pmid", ""),
                 "title": paper.get("title", ""),
                 "year": paper.get("year", ""),
                 "journal": paper.get("journal", ""),
+                "abstract": paper.get("abstract", ""),  # Keep for step 5
+                "mesh_terms": paper.get("mesh_terms", []),  # Keep for step 5
                 "score": screening_result.get("score", 0.0),
                 "relevant": screening_result.get("relevant", False),
                 "reasoning": screening_result.get("reasoning", ""),
-                "search_date": datetime.now().strftime("%Y-%m-%d")
+                "search_date": datetime.now().strftime("%Y-%m-%d"),
+                "url": paper.get("url", "")
             }
             results.append(result)
 
-        # Step 5: Filter for relevant papers only, then sort by score and return top N
+        # Step 5: Filter for relevant papers, sort by score, and get top N
+        print(f"\nStep 5: Filtering and ranking top {top_n} papers...")
         relevant_results = [r for r in results if r["relevant"]]
         results_sorted = sorted(relevant_results, key=lambda x: x["score"], reverse=True)
         top_results = results_sorted[:top_n]
 
+        # Step 6: Extract associations for top N papers only
+        print(f"Step 6: Extracting modification effects and longevity associations for top {len(top_results)} papers...")
+        for result in tqdm(top_results, desc="Extracting associations"):
+            # Extract modification effects and longevity associations
+            association_result = self.screening.screen_association(
+                title=result.get("title", ""),
+                abstract=result.get("abstract", ""),
+                keywords=result.get("mesh_terms", [])
+            )
+
+            # Add association data to result
+            result["modification_effects"] = association_result.get("modification_effects", "Not specified")
+            result["longevity_association"] = association_result.get("longevity_association", "Not specified")
+
+            # Remove temporary fields (abstract and mesh_terms no longer needed)
+            result.pop("abstract", None)
+            result.pop("mesh_terms", None)
+
         print(f"\n{'='*80}")
         print(f"SCREENING COMPLETE")
         print(f"{'='*80}")
-        print(f"Total papers screened: {len(results)}")
+        print(f"Total papers screened for relevance: {len(results)}")
         print(f"Relevant papers (relevant=True): {len(relevant_results)}")
-        print(f"Top {len(top_results)} relevant papers selected (requested: {top_n})\n")
+        print(f"Top {len(top_results)} papers selected (requested: {top_n})")
+        print(f"Associations extracted for top {len(top_results)} papers\n")
 
         return top_results
 
@@ -156,8 +174,7 @@ class GeneLiteratureSearch:
 
         # Define CSV columns
         fieldnames = [
-            "gene_id",
-            "gene_symbol",
+            "symbol",
             "pmid",
             "title",
             "year",
@@ -165,7 +182,10 @@ class GeneLiteratureSearch:
             "score",
             "relevant",
             "reasoning",
-            "search_date"
+            "modification_effects",
+            "longevity_association",
+            "search_date",
+            "url"
         ]
 
         # Write to CSV
@@ -193,10 +213,10 @@ def batch_search_genes(
     Batch search multiple genes and save all results to a single CSV.
 
     Args:
-        genes: List of gene dicts with keys: gene_symbol, gene_id, include_reprogramming
+        genes: List of gene dicts with keys: symbol, include_reprogramming
                Example: [
-                   {"gene_symbol": "NRF2", "gene_id": 4780, "include_reprogramming": False},
-                   {"gene_symbol": "SOX2", "gene_id": 6657, "include_reprogramming": True}
+                   {"symbol": "NFE2L2", "include_reprogramming": False},
+                   {"symbol": "MYC", "include_reprogramming": True}
                ]
         output_file: Path to output CSV file
         max_results: Maximum papers to retrieve per gene
@@ -215,9 +235,10 @@ def batch_search_genes(
         with open(output_file, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                # Track by gene_id if available, otherwise by gene_symbol
-                gene_key = row.get("gene_id")
-                existing_genes.add(gene_key)
+                # Track by symbol
+                symbol = row.get("symbol")
+                if symbol:
+                    existing_genes.add(symbol)
 
     print(f"\n{'='*80}")
     print(f"BATCH GENE LITERATURE SEARCH")
@@ -232,21 +253,20 @@ def batch_search_genes(
     skipped_count = 0
 
     for i, gene in enumerate(genes, 1):
-        gene_key = str(gene.get("gene_id"))
+        symbol = gene.get("symbol")
 
         # Skip if gene already exists in CSV
-        if skip_existing and gene_key in existing_genes:
-            print(f"⊘ Skipping {gene['gene_symbol']} (gene_id: {gene.get('gene_id')}) - already in database")
+        if skip_existing and symbol in existing_genes:
+            print(f"⊘ Skipping {symbol} - already in database")
             skipped_count += 1
             continue
 
         print(f"\n{'='*80}")
-        print(f"Processing gene {i}/{len(genes)}: {gene['gene_symbol']}")
+        print(f"Processing gene {i}/{len(genes)}: {symbol}")
         print(f"{'='*80}\n")
 
         results = workflow.search_gene(
-            gene_symbol=gene["gene_symbol"],
-            gene_id=gene.get("gene_id"),
+            gene_symbol=symbol,
             max_results=max_results,
             top_n=top_n,
             include_reprogramming=gene.get("include_reprogramming", False)
@@ -278,7 +298,7 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python gene_search.py <gene_mapping_file> [--force]")
         print("\nArguments:")
-        print("  gene_mapping_file    CSV file with gene mappings (gene_symbol, gene_id, include_reprogramming)")
+        print("  gene_mapping_file    CSV file with gene mappings (symbol, include_reprogramming)")
         print("  --force              Optional: Rerun genes that already exist in the database")
         print("\nExamples:")
         print("  python gene_search.py data/gene_mappings.csv")
@@ -293,13 +313,12 @@ if __name__ == "__main__":
         reader = csv.DictReader(f)
         for row in reader:
             genes.append({
-                "gene_symbol": row["gene_symbol"],
-                "gene_id": int(row["gene_id"]) if row.get("gene_id") else None,
+                "symbol": row["symbol"],
                 "include_reprogramming": row.get("include_reprogramming", "false").lower() == "true"
             })
 
     print(f"Loaded {len(genes)} genes from {mapping_file}")
-    print(f"Genes: {', '.join(g['gene_symbol'] for g in genes)}\n")
+    print(f"Genes: {', '.join(g['symbol'] for g in genes)}\n")
 
     # Check for --force flag to rerun all genes
     skip_existing = "--force" not in sys.argv

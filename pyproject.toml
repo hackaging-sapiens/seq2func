@@ -12,5 +12,6 @@ dependencies = [
     "langchain-openai>=0.3.35",
     "llama-index>=0.14.4",
     "pandas>=2.2.3",
+    "psycopg2-binary>=2.9.10",
     "python-dotenv>=1.1.1",
 ]
