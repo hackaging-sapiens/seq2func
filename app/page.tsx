@@ -2,6 +2,7 @@ import { fetchProteins } from './lib/api';
 import { ThemeToggle } from './components/ThemeToggle';
 import { ProteinList } from './components/ProteinList';
 import { ScrollRestoration } from './components/ScrollRestoration';
+import { SearchBar } from './components/SearchBar';
 
 export default async function Home() {
   const proteins = await fetchProteins();
@@ -21,30 +22,8 @@ export default async function Home() {
             <ThemeToggle />
           </div>
 
-          {/* Search Bar - Placeholder */}
-          <div className="max-w-2xl">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search proteins and genes... (coming soon)"
-                className="w-full px-6 py-4 rounded-lg text-gray-900 dark:text-gray-100 dark:bg-gray-800 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-600"
-                disabled
-              />
-              <svg
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-gray-400 dark:text-gray-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
-          </div>
+          {/* Search Bar */}
+          <SearchBar />
         </div>
       </div>
 
