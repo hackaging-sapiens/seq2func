@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { startGeneSearch, getTaskStatus, cancelTask, type TaskStatusResponse, type ProgressInfo } from '../lib/api';
 import { PaperResults } from '../components/PaperResults';
 import { ProgressDisplay } from '../components/ProgressDisplay';
 
-export default function AgentPage() {
+function AgentPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -257,5 +257,23 @@ export default function AgentPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function AgentPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative w-16 h-16 mx-auto mb-6">
+            <div className="absolute top-0 left-0 w-full h-full border-4 border-blue-200 dark:border-blue-900 rounded-full"></div>
+            <div className="absolute top-0 left-0 w-full h-full border-4 border-transparent border-t-blue-600 dark:border-t-blue-400 rounded-full animate-spin"></div>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    }>
+      <AgentPageContent />
+    </Suspense>
   );
 }
