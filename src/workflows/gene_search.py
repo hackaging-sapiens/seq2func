@@ -11,7 +11,7 @@ This workflow:
 
 import csv
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, TYPE_CHECKING
 from pathlib import Path
 from tqdm import tqdm
 import sys
@@ -19,6 +19,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from src.tools.pubmed import PubMed
 from src.tools.screening import Screening
+
+if TYPE_CHECKING:
+    from src.tasks.task_manager import ProgressCallback, CancellationToken
 
 class GeneLiteratureSearch:
     """
@@ -45,7 +48,9 @@ class GeneLiteratureSearch:
         max_results: int = 200,
         top_n: int = 20,
         include_reprogramming: bool = False,
-        custom_terms: Optional[List[str]] = None
+        custom_terms: Optional[List[str]] = None,
+        progress_callback: Optional['ProgressCallback'] = None,
+        cancellation_token: Optional['CancellationToken'] = None
     ) -> List[Dict[str, Any]]:
         """
         Search and screen papers for a gene.
@@ -56,43 +61,92 @@ class GeneLiteratureSearch:
             top_n: Number of top-ranked papers to return
             include_reprogramming: Whether to include reprogramming terms in search
             custom_terms: Additional custom search terms
+            progress_callback: Optional callback for reporting progress
+            cancellation_token: Optional token to check for cancellation
 
         Returns:
             List of top N papers with metadata and scores
         """
-        print(f"{'='*80}")
+        # Helper to report progress (sends to both callback and stdout for debugging)
+        def report_progress(step: str, step_num: int, papers_screened: Optional[int] = None,
+                          total_papers: Optional[int] = None, message: str = ""):
+            # Always print to stdout for debugging
+            if papers_screened is not None and total_papers is not None:
+                print(f"[Step {step_num}/4] {message} ({papers_screened}/{total_papers})")
+            else:
+                print(f"[Step {step_num}/4] {message or step}")
+
+            # Also send to progress callback if available
+            if progress_callback:
+                progress_callback.update(
+                    current_step=step,
+                    step_number=step_num,
+                    total_steps=4,
+                    papers_screened=papers_screened,
+                    total_papers=total_papers,
+                    message=message
+                )
+
+        # Debug: Print header
+        print(f"\n{'='*80}")
         print(f"GENE LITERATURE SEARCH: {gene_symbol}")
+        if gene_id:
+            print(f"Gene ID: {gene_id}")
+        print(f"Max Results: {max_results} | Top N: {top_n}")
         print(f"{'='*80}\n")
 
         # Step 1: Build search query
-        print("Step 1: Building PubMed search query...")
+        report_progress("Building query", 1, message=f"Building PubMed search query for {gene_symbol}")
         query = self.pubmed.build_search_query(
             gene_name=gene_symbol,
             include_reprogramming=include_reprogramming,
             custom_terms=custom_terms
         )
-        print(f"Query: {query}\n")
+        print(f"Query: {query}")
+
+        # Check cancellation
+        if cancellation_token and cancellation_token.is_cancelled():
+            return []
 
         # Step 2: Search PubMed
-        print(f"Step 2: Searching PubMed (max {max_results} results)...")
+        report_progress("Searching PubMed", 2, message=f"Searching PubMed (max {max_results} results)")
         pmids = self.pubmed.search(query, max_results=max_results)
-        print(f"✓ Found {len(pmids)} papers\n")
+        print(f"✓ Found {len(pmids)} papers")
 
         if not pmids:
-            print("No papers found. Exiting.")
+            report_progress("Search complete", 4, message="No papers found")
+            print("No papers found. Exiting.\n")
+            return []
+
+        # Check cancellation
+        if cancellation_token and cancellation_token.is_cancelled():
             return []
 
         # Step 3: Fetch paper metadata
-        print("Step 3: Fetching paper metadata...")
+        report_progress("Fetching metadata", 3, message=f"Fetching metadata for {len(pmids)} papers")
         papers = self.pubmed.fetch(pmids)
-        print(f"✓ Fetched {len(papers)} papers\n")
+        print(f"✓ Fetched {len(papers)} papers")
 
-        # Step 4: Screen papers for relevance (all 200 papers)
-        print("Step 4: Screening papers for sequence→function→aging links...")
+        # Check cancellation
+        if cancellation_token and cancellation_token.is_cancelled():
+            print("Search cancelled by user.\n")
+            return []
+
+        # Step 4: Screen papers with LLM
+        report_progress("Screening papers", 4, papers_screened=0, total_papers=len(papers),
+                       message="Starting paper screening with AI")
         results = []
 
-        for paper in tqdm(papers, desc="Screening for relevance"):
-            # Screen for relevance only
+        for idx, paper in enumerate(papers, 1):
+            # Check cancellation before each paper
+            if cancellation_token and cancellation_token.is_cancelled():
+                # Return partial results
+                break
+
+            # Update progress
+            report_progress("Screening papers", 4, papers_screened=idx, total_papers=len(papers),
+                          message=f"Screening paper {idx}/{len(papers)}")
+
             screening_result = self.screening.screen_paper(
                 title=paper.get("title", ""),
                 abstract=paper.get("abstract", ""),
@@ -116,37 +170,27 @@ class GeneLiteratureSearch:
             }
             results.append(result)
 
-        # Step 5: Filter for relevant papers, sort by score, and get top N
-        print(f"\nStep 5: Filtering and ranking top {top_n} papers...")
+        # Filter for relevant papers only, then sort by score and return top N
         relevant_results = [r for r in results if r["relevant"]]
         results_sorted = sorted(relevant_results, key=lambda x: x["score"], reverse=True)
         top_results = results_sorted[:top_n]
 
-        # Step 6: Extract associations for top N papers only
-        print(f"Step 6: Extracting modification effects and longevity associations for top {len(top_results)} papers...")
-        for result in tqdm(top_results, desc="Extracting associations"):
-            # Extract modification effects and longevity associations
-            association_result = self.screening.screen_association(
-                title=result.get("title", ""),
-                abstract=result.get("abstract", ""),
-                keywords=result.get("mesh_terms", [])
-            )
+        # Final progress update
+        was_cancelled = cancellation_token and cancellation_token.is_cancelled()
+        status = "cancelled" if was_cancelled else "completed"
+        report_progress(f"Screening {status}", 4, papers_screened=len(results), total_papers=len(papers),
+                       message=f"Screened {len(results)} papers, found {len(relevant_results)} relevant")
 
-            # Add association data to result
-            result["modification_effects"] = association_result.get("modification_effects", "Not specified")
-            result["longevity_association"] = association_result.get("longevity_association", "Not specified")
-
-            # Remove temporary fields (abstract and mesh_terms no longer needed)
-            result.pop("abstract", None)
-            result.pop("mesh_terms", None)
-
+        # Debug: Print summary
         print(f"\n{'='*80}")
         print(f"SCREENING COMPLETE")
         print(f"{'='*80}")
         print(f"Total papers screened for relevance: {len(results)}")
         print(f"Relevant papers (relevant=True): {len(relevant_results)}")
-        print(f"Top {len(top_results)} papers selected (requested: {top_n})")
-        print(f"Associations extracted for top {len(top_results)} papers\n")
+        print(f"Top {len(top_results)} relevant papers selected (requested: {top_n})")
+        if was_cancelled:
+            print("Note: Search was cancelled by user")
+        print(f"{'='*80}\n")
 
         return top_results
 
