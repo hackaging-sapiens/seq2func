@@ -1,11 +1,11 @@
--- Database schema for seq2fun project
--- Creates tables for genes and research papers in the seq2fun schema
+-- Database schema for seq2func project
+-- Creates tables for genes and research papers in the seq2func schema
 
 -- Create schema if it doesn't exist
-CREATE SCHEMA IF NOT EXISTS seq2fun;
+CREATE SCHEMA IF NOT EXISTS seq2func;
 
--- Set search path to seq2fun schema
-SET search_path TO seq2fun;
+-- Set search path to seq2func schema
+SET search_path TO seq2func;
 
 -- Drop existing tables (use with caution in production!)
 DROP TABLE IF EXISTS papers CASCADE;

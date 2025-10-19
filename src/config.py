@@ -20,7 +20,7 @@ DB_PORT = os.getenv("DB_PORT", "5432")
 DB_NAME = os.getenv("DB_NAME", "postgres")
 DB_USER = os.getenv("DB_USER", "postgres")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "djrpHA@5432")
-DB_SCHEMA = os.getenv("DB_SCHEMA", "seq2fun")
+DB_SCHEMA = os.getenv("DB_SCHEMA", "seq2func")
 
 # Validate required configurations
 if not NEBIUS_API_KEY:
