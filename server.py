@@ -29,13 +29,12 @@ async def options_handler(request: Request, call_next):
     return await call_next(request)
 
 # Configure CORS to allow frontend access
-# In production, replace with your actual frontend URL
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",  # Local Next.js development server
         "http://127.0.0.1:3000",  # Alternative localhost
-        # Add your production frontend URL here when deploying
+        "https://hackaging-sapiens.github.io",  # Production GitHub Pages deployment
     ],
     allow_credentials=True,
     allow_methods=["*"],  # Allows all HTTP methods (GET, POST, etc.)
