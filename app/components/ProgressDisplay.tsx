@@ -83,7 +83,7 @@ export function ProgressDisplay({ progress, geneName }: ProgressDisplayProps) {
       {/* Info Box */}
       <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
         <p className="text-sm text-gray-700 dark:text-gray-300 text-center">
-          <strong>Note:</strong> This process may take 1-3 minutes depending on the number of papers.
+          <strong>Note:</strong> This process may take up to 5 minutes depending on the number of papers.
           You can cancel at any time using the button below.
         </p>
       </div>
