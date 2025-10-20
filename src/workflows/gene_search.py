@@ -90,8 +90,6 @@ class GeneLiteratureSearch:
         # Debug: Print header
         print(f"\n{'='*80}")
         print(f"GENE LITERATURE SEARCH: {gene_symbol}")
-        if gene_id:
-            print(f"Gene ID: {gene_id}")
         print(f"Max Results: {max_results} | Top N: {top_n}")
         print(f"{'='*80}\n")
 
@@ -170,16 +168,56 @@ class GeneLiteratureSearch:
             }
             results.append(result)
 
-        # Filter for relevant papers only, then sort by score and return top N
+        # Step 5: Filter for relevant papers, sort by score, and get top N
+        report_progress("Filtering results", 5, message=f"Filtering and ranking papers")
         relevant_results = [r for r in results if r["relevant"]]
         results_sorted = sorted(relevant_results, key=lambda x: x["score"], reverse=True)
         top_results = results_sorted[:top_n]
 
+        print(f"\n✓ Filtered {len(relevant_results)} relevant papers, selected top {len(top_results)}")
+
+        # Check cancellation
+        if cancellation_token and cancellation_token.is_cancelled():
+            print("Search cancelled by user.\n")
+            return top_results
+
+        # Step 6: Extract associations for top N papers only
+        if top_results:
+            report_progress("Extracting associations", 6, papers_screened=0, total_papers=len(top_results),
+                          message=f"Extracting modification effects and longevity associations for top {len(top_results)} papers")
+            print(f"\nStep 6: Extracting modification effects and longevity associations for top {len(top_results)} papers...")
+
+            for idx, result in enumerate(top_results, 1):
+                # Check cancellation before each extraction
+                if cancellation_token and cancellation_token.is_cancelled():
+                    break
+
+                # Update progress
+                report_progress("Extracting associations", 6, papers_screened=idx, total_papers=len(top_results),
+                              message=f"Extracting associations for paper {idx}/{len(top_results)}")
+
+                # Extract modification effects and longevity associations
+                association_result = self.screening.screen_association(
+                    title=result.get("title", ""),
+                    abstract=result.get("abstract", ""),
+                    keywords=result.get("mesh_terms", [])
+                )
+
+                # Add association data to result
+                result["modification_effects"] = association_result.get("modification_effects", "Not specified")
+                result["longevity_association"] = association_result.get("longevity_association", "Not specified")
+
+                # Remove temporary fields (abstract and mesh_terms no longer needed)
+                result.pop("abstract", None)
+                result.pop("mesh_terms", None)
+
+            print(f"✓ Associations extracted for {len(top_results)} papers")
+
         # Final progress update
         was_cancelled = cancellation_token and cancellation_token.is_cancelled()
         status = "cancelled" if was_cancelled else "completed"
-        report_progress(f"Screening {status}", 4, papers_screened=len(results), total_papers=len(papers),
-                       message=f"Screened {len(results)} papers, found {len(relevant_results)} relevant")
+        report_progress(f"Search {status}", 7,
+                       message=f"Found {len(top_results)} top papers with associations")
 
         # Debug: Print summary
         print(f"\n{'='*80}")
@@ -187,7 +225,8 @@ class GeneLiteratureSearch:
         print(f"{'='*80}")
         print(f"Total papers screened for relevance: {len(results)}")
         print(f"Relevant papers (relevant=True): {len(relevant_results)}")
-        print(f"Top {len(top_results)} relevant papers selected (requested: {top_n})")
+        print(f"Top {len(top_results)} papers selected (requested: {top_n})")
+        print(f"Associations extracted for top {len(top_results)} papers")
         if was_cancelled:
             print("Note: Search was cancelled by user")
         print(f"{'='*80}\n")
