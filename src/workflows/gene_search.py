@@ -153,7 +153,7 @@ class GeneLiteratureSearch:
 
             # Combine paper metadata with screening results (no associations yet)
             result = {
-                "symbol": gene_symbol,
+                "gene_symbol": gene_symbol,
                 "pmid": paper.get("pmid", ""),
                 "title": paper.get("title", ""),
                 "year": paper.get("year", ""),
@@ -257,7 +257,7 @@ class GeneLiteratureSearch:
 
         # Define CSV columns
         fieldnames = [
-            "symbol",
+            "gene_symbol",
             "pmid",
             "title",
             "year",
@@ -318,10 +318,10 @@ def batch_search_genes(
         with open(output_file, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
-                # Track by symbol
-                symbol = row.get("symbol")
-                if symbol:
-                    existing_genes.add(symbol)
+                # Track by gene_symbol
+                gene_symbol = row.get("gene_symbol")
+                if gene_symbol:
+                    existing_genes.add(gene_symbol)
 
     print(f"\n{'='*80}")
     print(f"BATCH GENE LITERATURE SEARCH")

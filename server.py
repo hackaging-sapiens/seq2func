@@ -58,6 +58,8 @@ class PaperResult(BaseModel):
     score: float = Field(..., description="Relevance score (0.0-1.0)")
     relevant: bool = Field(..., description="Whether paper meets relevance threshold")
     reasoning: str = Field(..., description="LLM reasoning for relevance score")
+    modification_effects: Optional[str] = Field("Not specified", description="Sequence modifications and functional impacts")
+    longevity_association: Optional[str] = Field("Not specified", description="Aging/longevity outcomes and mechanisms")
     search_date: str = Field(..., description="Date the search was performed")
 
 
@@ -126,7 +128,6 @@ def run_gene_search_task(
         # Run the search
         results = workflow.search_gene(
             gene_symbol=gene_symbol,
-            gene_id=gene_id,
             max_results=max_results,
             top_n=top_n,
             include_reprogramming=include_reprogramming,
@@ -307,7 +308,6 @@ def agent(
         # Call the search_gene function
         top_results = workflow.search_gene(
             gene_symbol=gene_symbol,
-            gene_id=gene_id,
             max_results=max_results,
             top_n=top_n,
             include_reprogramming=include_reprogramming

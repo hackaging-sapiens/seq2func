@@ -6,12 +6,26 @@ interface ProgressDisplayProps {
 }
 
 export function ProgressDisplay({ progress, geneName }: ProgressDisplayProps) {
-  // Calculate paper screening progress if available
+  // Calculate paper screening/extraction progress if available
   const paperProgress = progress.papers_screened && progress.total_papers
     ? (progress.papers_screened / progress.total_papers) * 100
     : 0;
 
-  const isScreening = progress.papers_screened !== undefined && progress.total_papers;
+  const isProcessingPapers = progress.papers_screened !== undefined && progress.total_papers;
+
+  // Determine current phase based on step name
+  const isExtractingAssociations = progress.current_step === "Extracting associations";
+  const isScreeningPapers = progress.current_step === "Screening papers";
+
+  // Determine title based on current step
+  let title = 'Preparing Search...';
+  if (isScreeningPapers) {
+    title = 'Screening Papers...';
+  } else if (isExtractingAssociations) {
+    title = 'Extracting Associations...';
+  } else if (progress.current_step === "Filtering results") {
+    title = 'Filtering Results...';
+  }
 
   return (
     <div className="space-y-6">
@@ -26,10 +40,10 @@ export function ProgressDisplay({ progress, geneName }: ProgressDisplayProps) {
       {/* Title */}
       <div className="text-center">
         <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
-          {isScreening ? 'Screening Papers...' : 'Preparing Search...'}
+          {title}
         </h2>
         <p className="text-gray-600 dark:text-gray-400">
-          Searching for sequence-to-function data for <strong>{geneName}</strong>
+          Searching for sequence→function→aging links for <strong>{geneName}</strong>
         </p>
       </div>
 
@@ -42,11 +56,11 @@ export function ProgressDisplay({ progress, geneName }: ProgressDisplayProps) {
         </div>
       )}
 
-      {/* Paper Screening Progress */}
-      {isScreening ? (
+      {/* Paper Processing Progress (Screening or Extracting) */}
+      {isProcessingPapers ? (
         <div className="space-y-3">
           <div className="flex justify-between text-lg font-semibold text-gray-700 dark:text-gray-300">
-            <span>Screening Progress</span>
+            <span>{isExtractingAssociations ? 'Extraction Progress' : 'Screening Progress'}</span>
             <span className="text-blue-600 dark:text-blue-400">
               {progress.papers_screened} / {progress.total_papers}
             </span>
@@ -65,7 +79,9 @@ export function ProgressDisplay({ progress, geneName }: ProgressDisplayProps) {
               {paperProgress.toFixed(1)}% complete
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-500">
-              Using AI to analyze papers for sequence→function→aging links
+              {isExtractingAssociations
+                ? 'Extracting modification effects and longevity associations'
+                : 'Using AI to analyze papers for sequence→function→aging links'}
             </p>
           </div>
         </div>
