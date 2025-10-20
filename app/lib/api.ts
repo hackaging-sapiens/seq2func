@@ -21,6 +21,8 @@ export interface PaperResult {
   score: number;
   relevant: boolean;
   reasoning: string;
+  modification_effects?: string;
+  longevity_association?: string;
   search_date: string;
 }
 

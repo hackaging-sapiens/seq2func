@@ -135,16 +135,16 @@ export function SearchBar() {
             </label>
             <input
               type="range"
-              min="10"
-              max="1000"
-              step="10"
+              min="1"
+              max="500"
+              step="1"
               value={maxResults}
               onChange={(e) => setMaxResults(parseInt(e.target.value))}
               className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-blue-500"
             />
             <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
-              <span>10</span>
-              <span>1000</span>
+              <span>1</span>
+              <span>500</span>
             </div>
             <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
               More papers = more comprehensive but slower search
@@ -159,15 +159,15 @@ export function SearchBar() {
             </label>
             <input
               type="range"
-              min="5"
+              min="1"
               max="100"
-              step="5"
+              step="1"
               value={topN}
               onChange={(e) => setTopN(parseInt(e.target.value))}
               className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600 dark:accent-blue-500"
             />
             <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
-              <span>5</span>
+              <span>1</span>
               <span>100</span>
             </div>
             <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
