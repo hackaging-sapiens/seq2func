@@ -33,7 +33,8 @@ RUN uv sync --frozen
 COPY . ./
 
 # Run the web service on container startup using uvicorn.
-# For environments with multiple CPU cores, increase the number of workers
-# to be equal to the cores available.
-# Example: --workers 4 for a 4-core machine
-CMD exec uv run uvicorn server:app --host 0.0.0.0 --port $PORT --workers 4
+# IMPORTANT: Must use --workers 1 because TaskManager stores tasks in memory.
+# Multiple workers would cause "Task not found" errors since tasks created on
+# one worker are not visible to other workers.
+# For multi-worker support, implement persistent task storage (SQLite/Redis).
+CMD exec uv run uvicorn server:app --host 0.0.0.0 --port $PORT --workers 1
