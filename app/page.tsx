@@ -1,11 +1,11 @@
-import { fetchProteins } from './lib/api';
+import { fetchGenes } from './lib/api';
 import { ThemeToggle } from './components/ThemeToggle';
 import { ProteinList } from './components/ProteinList';
 import { ScrollRestoration } from './components/ScrollRestoration';
 import { SearchBar } from './components/SearchBar';
 
 export default async function Home() {
-  const proteins = await fetchProteins();
+  const proteins = await fetchGenes();
   return (
     <main className="min-h-screen">
       <ScrollRestoration />

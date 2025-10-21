@@ -74,60 +74,55 @@ export function PaperResults({ results }: PaperResultsProps) {
             </a>
           </div>
 
-          {/* AI Reasoning */}
-          <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700 mb-3">
-            <div className="flex items-start gap-2">
-              <svg className="w-5 h-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
-              <div className="flex-1">
-                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  AI Analysis
-                </h4>
-                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                  {paper.reasoning}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Modification Effects */}
-          {paper.modification_effects && paper.modification_effects !== "Not specified" && (
-            <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-4 border border-blue-200 dark:border-blue-800 mb-3">
-              <div className="flex items-start gap-2">
-                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                </svg>
-                <div className="flex-1">
-                  <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2">
-                    Modification Effects
-                  </h4>
-                  <p className="text-sm text-blue-700 dark:text-blue-300 leading-relaxed">
-                    {paper.modification_effects}
-                  </p>
+          {/* AI-Extracted Insights */}
+          {(paper.modification_effects && paper.modification_effects !== "Not specified") ||
+           (paper.longevity_association && paper.longevity_association !== "Not specified") ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Modification Effects */}
+              {paper.modification_effects && paper.modification_effects !== "Not specified" && (
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 rounded-xl p-5 border-2 border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all hover:shadow-md">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                      <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-bold text-blue-900 dark:text-blue-200 mb-2 flex items-center gap-2">
+                        Modification Effects
+                        <span className="inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
+                      </h4>
+                      <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed">
+                        {paper.modification_effects}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
+              )}
 
-          {/* Longevity Association */}
-          {paper.longevity_association && paper.longevity_association !== "Not specified" && (
-            <div className="bg-emerald-50 dark:bg-emerald-950 rounded-lg p-4 border border-emerald-200 dark:border-emerald-800">
-              <div className="flex items-start gap-2">
-                <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div className="flex-1">
-                  <h4 className="text-sm font-semibold text-emerald-700 dark:text-emerald-300 mb-2">
-                    Longevity Association
-                  </h4>
-                  <p className="text-sm text-emerald-700 dark:text-emerald-300 leading-relaxed">
-                    {paper.longevity_association}
-                  </p>
+              {/* Longevity Association */}
+              {paper.longevity_association && paper.longevity_association !== "Not specified" && (
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/50 dark:to-teal-950/50 rounded-xl p-5 border-2 border-emerald-200 dark:border-emerald-800 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all hover:shadow-md">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 bg-emerald-100 dark:bg-emerald-900 rounded-lg flex items-center justify-center">
+                      <svg className="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-bold text-emerald-900 dark:text-emerald-200 mb-2 flex items-center gap-2">
+                        Longevity Association
+                        <span className="inline-block w-2 h-2 bg-emerald-500 rounded-full"></span>
+                      </h4>
+                      <p className="text-sm text-emerald-800 dark:text-emerald-200 leading-relaxed">
+                        {paper.longevity_association}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
-          )}
+          ) : null}
         </article>
       ))}
     </div>

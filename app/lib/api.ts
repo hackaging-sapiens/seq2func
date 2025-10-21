@@ -10,6 +10,25 @@ export interface Protein {
   function: string;
 }
 
+// Gene API types (from external gene database)
+export interface GeneInfo {
+  gene_symbol: string;
+  gene_symbol_aliases: string | null;
+  gene_name: string;
+  hgnc_gene_id: string;
+  ncbi_gene_id: number;
+  ensembl_geneid: string;
+  chromosome: string;
+  assembly: string;
+  gene_type: string;
+  number_of_exons: number;
+  gene_start_position: number;
+  gene_end_position: number;
+  description: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Gene search API types (matching backend Pydantic models)
 export interface PaperResult {
   gene_id: number | null;
@@ -63,11 +82,20 @@ export interface TaskStatusResponse {
 }
 
 const API_URL = 'https://dummyjson.com/c/3418-e7e3-4264-9a03';
+const GENE_API_URL = 'http://95.217.221.48:8008/api/v1/gene';
+
+// List of gene symbols to fetch
+const GENE_SYMBOLS = [
+  'APOE', 'ATM', 'BRCA1', 'CAT', 'CDKN2A', 'FOXO1', 'FOXO3', 'HIF1A',
+  'IGF1R', 'KL', 'LMNA', 'MTOR', 'MYC', 'NFE2L2', 'PPARGC1A', 'SIRT1',
+  'SIRT6', 'SOD2', 'TERC', 'TERT', 'TP53', 'WRN'
+];
 
 /**
- * Fetches all proteins from the REST API
+ * Fetches all proteins from the REST API (DEPRECATED - use fetchGenes instead)
  * @returns Promise<Protein[]> - Array of protein objects
  * @throws Error if the fetch fails or response is invalid
+ * @deprecated Use fetchGenes() for real gene data from external API
  */
 export async function fetchProteins(): Promise<Protein[]> {
   try {
@@ -90,6 +118,50 @@ export async function fetchProteins(): Promise<Protein[]> {
     return data as Protein[];
   } catch (error) {
     console.error('Error fetching proteins:', error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches gene information for a specific gene symbol
+ * @param geneSymbol - Gene symbol (e.g., 'APOE', 'TP53')
+ * @returns Promise<GeneInfo> - Gene information object
+ * @throws Error if the fetch fails or response is invalid
+ */
+export async function fetchGeneBySymbol(geneSymbol: string): Promise<GeneInfo> {
+  try {
+    const response = await fetch(`${GENE_API_URL}/${geneSymbol}`, {
+      // Enable Next.js caching with revalidation
+      next: { revalidate: 3600 } // Revalidate every hour
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch gene ${geneSymbol}: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data as GeneInfo;
+  } catch (error) {
+    console.error(`Error fetching gene ${geneSymbol}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches all genes from the external gene API
+ * @returns Promise<GeneInfo[]> - Array of gene information objects
+ * @throws Error if any fetch fails
+ */
+export async function fetchGenes(): Promise<GeneInfo[]> {
+  try {
+    // Fetch all genes in parallel
+    const promises = GENE_SYMBOLS.map(symbol => fetchGeneBySymbol(symbol));
+    const genes = await Promise.all(promises);
+
+    // Sort by gene symbol alphabetically
+    return genes.sort((a, b) => a.gene_symbol.localeCompare(b.gene_symbol));
+  } catch (error) {
+    console.error('Error fetching genes:', error);
     throw error;
   }
 }
