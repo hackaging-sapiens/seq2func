@@ -30,9 +30,6 @@ export function ProteinTable({ proteins }: ProteinTableProps) {
                 Chromosome
               </th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Location
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 Description
               </th>
             </tr>
@@ -53,16 +50,9 @@ export function ProteinTable({ proteins }: ProteinTableProps) {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <ProteinLink
                       href={`/gene/${id}`}
-                      className="group flex flex-col"
+                      className="text-sm font-bold text-blue-700 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300"
                     >
-                      <span className="text-sm font-bold text-blue-700 dark:text-blue-400 group-hover:text-blue-900 dark:group-hover:text-blue-300">
-                        {name}
-                      </span>
-                      {isGene && protein.gene_symbol_aliases && (
-                        <span className="text-xs font-mono text-gray-500 dark:text-gray-400">
-                          {protein.gene_symbol_aliases}
-                        </span>
-                      )}
+                      {name}
                     </ProteinLink>
                   </td>
                   <td className="px-6 py-4">
@@ -79,20 +69,6 @@ export function ProteinTable({ proteins }: ProteinTableProps) {
                       className="text-sm text-gray-700 dark:text-gray-300 hover:text-blue-700 dark:hover:text-blue-400"
                     >
                       {isGene ? `Chr ${protein.chromosome}` : 'N/A'}
-                    </ProteinLink>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <ProteinLink
-                      href={`/gene/${id}`}
-                      className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-700 dark:hover:text-blue-400"
-                    >
-                      {isGene ? (
-                        <span className="font-mono text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                          {protein.gene_start_position.toLocaleString()}-{protein.gene_end_position.toLocaleString()}
-                        </span>
-                      ) : (
-                        'N/A'
-                      )}
                     </ProteinLink>
                   </td>
                   <td className="px-6 py-4 max-w-md">
@@ -126,16 +102,9 @@ export function ProteinTable({ proteins }: ProteinTableProps) {
               className="block p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
             >
               <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h3 className="text-lg font-bold text-blue-700 dark:text-blue-400">
-                    {name}
-                  </h3>
-                  {isGene && protein.gene_symbol_aliases && (
-                    <p className="text-xs font-mono text-gray-500 dark:text-gray-400">
-                      {protein.gene_symbol_aliases}
-                    </p>
-                  )}
-                </div>
+                <h3 className="text-lg font-bold text-blue-700 dark:text-blue-400">
+                  {name}
+                </h3>
                 {isGene && (
                   <span className="text-xs font-mono bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded">
                     Chr {protein.chromosome}
