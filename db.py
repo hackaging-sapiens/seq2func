@@ -1,4 +1,5 @@
 """
+File name changed from main.py to db.py to avoid conflict with existing main.py files.
 Main application entry point.
 
 This file can run either:
