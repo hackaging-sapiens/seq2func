@@ -1,0 +1,31 @@
+# Aging and Longevity Associated Proteins
+proteins:
+  - APOE
+  - NRF2
+  # - SOX2
+  # - OCT4
+  # - FOXO3
+  # - TET2
+  # - ATM
+  # - BRCA2
+  # - BRCA1
+  # - CKMT1B
+  # - ASXL1
+  # - DNMT3A
+  # - SF3B1
+  # - PTEN
+  # - SRSF2
+  # - FOXM1
+  # - CREBBP
+  # - PIK3R1
+  # - BPIFB4
+  # - CISD2
+  # - YTHDF2
+  # - ZSCAN23
+  # - MUC5B
+  # - TERT
+  # - CDKN2A
+  # - IGF1
+  # - PON1
+  # - SIRT1
+  
