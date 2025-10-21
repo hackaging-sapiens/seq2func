@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { startGeneSearch, getTaskStatus, cancelTask, type TaskStatusResponse, type ProgressInfo } from '../lib/api';
+import { startGeneSearch, getTaskStatus, cancelTask, fetchGeneBySymbol, type TaskStatusResponse, type ProgressInfo, type GeneInfo } from '../lib/api';
 import { PaperResults } from '../components/PaperResults';
 import { ProgressDisplay } from '../components/ProgressDisplay';
+import { GeneInfoCard } from '../components/GeneInfoCard';
 
 function AgentPageContent() {
   const searchParams = useSearchParams();
@@ -20,9 +21,30 @@ function AgentPageContent() {
   const [taskStatus, setTaskStatus] = useState<TaskStatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [geneData, setGeneData] = useState<GeneInfo | null>(null);
 
   // Prevent duplicate task creation (React Strict Mode runs effects twice)
   const hasStartedTask = useRef(false);
+  const hasFetchedGene = useRef(false);
+
+  // Fetch gene data from database
+  useEffect(() => {
+    if (!gene) return;
+
+    // Prevent duplicate fetches
+    if (hasFetchedGene.current) return;
+    hasFetchedGene.current = true;
+
+    // Fetch gene data in parallel with search
+    fetchGeneBySymbol(gene)
+      .then((data) => {
+        setGeneData(data);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch gene data:', err);
+        // Don't set error state - gene data is optional
+      });
+  }, [gene]);
 
   // Start the search task
   useEffect(() => {
@@ -125,6 +147,9 @@ function AgentPageContent() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
+        {/* Gene Context Card */}
+        {geneData && <GeneInfoCard gene={geneData} />}
+
         {/* Error State */}
         {error && (
           <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-8 text-center">
