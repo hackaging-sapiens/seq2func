@@ -22,6 +22,7 @@ function AgentPageContent() {
   const [error, setError] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [geneData, setGeneData] = useState<GeneInfo | null>(null);
+  const [isDbPapersExpanded, setIsDbPapersExpanded] = useState(false);
 
   // Prevent duplicate task creation (React Strict Mode runs effects twice)
   const hasStartedTask = useRef(false);
@@ -150,6 +151,64 @@ function AgentPageContent() {
         {/* Gene Context Card */}
         {geneData && <GeneInfoCard gene={geneData} />}
 
+        {/* Previous Papers from Database - Collapsible */}
+        {geneData && (
+          <div className="mb-8 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-300 dark:border-gray-700 overflow-hidden">
+            {/* Header - Always Visible, Clickable */}
+            <button
+              onClick={() => setIsDbPapersExpanded(!isDbPapersExpanded)}
+              className="w-full flex items-center justify-between p-4 hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <svg
+                  className={`w-5 h-5 text-gray-600 dark:text-gray-400 transition-transform ${
+                    isDbPapersExpanded ? 'rotate-90' : ''
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Previous Papers from Database ({geneData.papers_count})
+                </h3>
+              </div>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                Click to {isDbPapersExpanded ? 'collapse' : 'expand'}
+              </span>
+            </button>
+
+            {/* Expandable Content */}
+            {isDbPapersExpanded && (
+              <div className="border-t border-gray-300 dark:border-gray-700 p-6">
+                {geneData.papers_count > 0 ? (
+                  <PaperResults results={geneData.papers} />
+                ) : (
+                  <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-8 text-center">
+                    <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-semibold text-yellow-900 dark:text-yellow-200 mb-2">
+                      No Papers in Database Yet
+                    </h3>
+                    <p className="text-yellow-700 dark:text-yellow-400">
+                      Once the AI search completes, relevant papers will be added to the database for future reference.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Error State */}
         {error && (
           <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-8 text-center">
@@ -248,7 +307,7 @@ function AgentPageContent() {
           <div>
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
-                Search Results
+                New Search Results
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
                 Found <strong>{taskStatus.result.count}</strong> relevant paper{taskStatus.result.count !== 1 ? 's' : ''} for <strong>{gene}</strong>
