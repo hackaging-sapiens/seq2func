@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Protein } from '@/app/lib/api';
+import { Protein, GeneInfo } from '@/app/lib/api';
 import { ViewMode, ViewToggle } from './ViewToggle';
 import { ProteinGrid } from './ProteinGrid';
 import { ProteinTable } from './ProteinTable';
 
 interface ProteinListProps {
-  proteins: Protein[];
+  proteins: Protein[] | GeneInfo[];
 }
 
 export function ProteinList({ proteins }: ProteinListProps) {
@@ -26,11 +26,11 @@ export function ProteinList({ proteins }: ProteinListProps) {
     <div className="max-w-7xl mx-auto px-6 py-12">
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
-          Longevity-Associated Proteins
+          Longevity-Associated Genes
         </h2>
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-600 dark:text-gray-400">
-            {proteins.length} proteins
+            {proteins.length} genes
           </span>
           <ViewToggle initialView={viewMode} onViewChange={handleViewChange} />
         </div>
