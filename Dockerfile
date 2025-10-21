@@ -36,4 +36,4 @@ COPY . ./
 # For environments with multiple CPU cores, increase the number of workers
 # to be equal to the cores available.
 # Example: --workers 4 for a 4-core machine
-CMD exec uv run uvicorn server:app --host 0.0.0.0 --port $PORT --workers 1
+CMD exec uv run uvicorn server:app --host 0.0.0.0 --port $PORT --workers 4
