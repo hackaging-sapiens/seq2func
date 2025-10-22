@@ -84,7 +84,7 @@ export interface TaskStatusResponse {
 }
 
 const API_URL = 'https://dummyjson.com/c/3418-e7e3-4264-9a03';
-const GENE_API_URL = 'http://95.217.221.48:8010/api/v1/gene';
+const GENE_API_URL = 'https://api.randomwork.in/api/v1/gene';
 
 // List of gene symbols to fetch
 const GENE_SYMBOLS = [
